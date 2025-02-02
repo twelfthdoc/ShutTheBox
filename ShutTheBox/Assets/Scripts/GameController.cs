@@ -1,36 +1,51 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
+    public bool dice;
+    public bool mainMenu;
+    public bool newGame;
+    public AudioSource tilesOpeningSound;
+    public AudioSource tilesClosingSound;
     public Box box;
-    private bool IsGameOver = false;
-    private bool HasPlayerWon = false;
+    public Canvas canvas;
+
+    private bool isGameOver = false;
+    private bool hasPlayerWon = false;
+    [SerializeField] private AudioSource diceSounds;
 
     // Start is called before the first frame update
     private void Start()
     {
         box = new Box();
+        tilesOpeningSound.Play();
     }
 
-    // Update is called once per frame
-    private void Update()
+    public void RollDice()
     {
-        
-    }
+        var clip = Resources.Load<AudioClip>($"Audio/Dice {Random.Range(1, 7)}");
 
-    private void OnMouseDown()
-    {
-        
-    }
+        if (clip != null)
+        {
+            diceSounds.PlayOneShot(clip);
+        }
+        else
+        {
+            Debug.Log("Could not find Audio file.");
+        }
 
-    private void RollDice()
-    {
         // Roll 2d6 and save their result
         var die1 = Random.Range(1, 7);
         var die2 = Random.Range(1, 7);
+
+        var image1 = Resources.Load<Sprite>($"Textures/Die Face {die1}");
+        var image2 = Resources.Load<Sprite>($"Textures/Die Face {die2}");
+
+
 
         // Calculate the sum
         var sum = die1 + die2;
@@ -49,11 +64,11 @@ public class GameController : MonoBehaviour
         // Check Game Over situation
         if (!box.tiles.Any(o => o.IsHighlighted))
         {
-            IsGameOver = true;
+            isGameOver = true;
         }
     }
 
-    private void MakeSelection()
+    public void MakeSelection()
     {
         // Close off all selected Tiles
         foreach (var tile in box.tiles.Where(tile => tile.IsSelected))
@@ -61,20 +76,26 @@ public class GameController : MonoBehaviour
             tile.Close();
         }
 
+        tilesClosingSound.Play();
+
         // If all Tiles are closed, the Box is shut and the Player wins
         if (box.tiles.All(o => o.IsClosed))
         {
-            HasPlayerWon = true;
-            IsGameOver = true;
+            hasPlayerWon = true;
+            isGameOver = true;
         }
     }
 
-    private void Reset()
+    public void NewGame()
     {
         box.tiles.Clear();
-        box = new Box();
+        SceneManager.LoadScene(1);
     }
 
+    public void MainMenu()
+    {
+        SceneManager.LoadScene(0);
+    }
 }
 
 public class Box
