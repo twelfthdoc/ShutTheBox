@@ -7,6 +7,8 @@ TagManager:
   - Text
   - Die1
   - Die2
+  - Box
+  - Button
   layers:
   - Default
   - TransparentFX

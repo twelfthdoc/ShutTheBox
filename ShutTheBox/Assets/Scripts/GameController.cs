@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,7 +13,6 @@ public class GameController : MonoBehaviour
     public AudioSource tilesOpeningSound;
     public AudioSource tilesClosingSound;
     public Box box;
-    public Canvas canvas;
 
     private bool isGameOver = false;
     private bool hasPlayerWon = false;
@@ -42,10 +42,15 @@ public class GameController : MonoBehaviour
         var die1 = Random.Range(1, 7);
         var die2 = Random.Range(1, 7);
 
-        var image1 = Resources.Load<Sprite>($"Textures/Die Face {die1}");
-        var image2 = Resources.Load<Sprite>($"Textures/Die Face {die2}");
+        // Assign the dice faces    
+        var die1Image = GameObject.FindGameObjectWithTag("Die1").GetComponent<Image>();
+        die1Image.sprite = Resources.Load<Sprite>($"Textures/Die Face {die1}");
 
+        var die2Image = GameObject.FindGameObjectWithTag("Die2").GetComponent<Image>();
+        die2Image.sprite = Resources.Load<Sprite>($"Textures/Die Face {die2}");
 
+        // Find the buttons on the canvas
+        var boxButtons = GameObject.FindGameObjectWithTag("Box").GetComponentsInChildren<Button>();
 
         // Calculate the sum
         var sum = die1 + die2;
@@ -57,7 +62,11 @@ public class GameController : MonoBehaviour
                 tile.Value == die2 ||
                 tile.Value == sum)
             {
-                tile.IsHighlighted = true;
+                if (!tile.IsClosed)
+                {
+                    tile.IsHighlighted = true;
+                    boxButtons[tile.Value - 1].interactable = true;
+                }
             }
         }
 
@@ -65,15 +74,34 @@ public class GameController : MonoBehaviour
         if (!box.tiles.Any(o => o.IsHighlighted))
         {
             isGameOver = true;
+            GameOver();
+        }
+        else
+        {
+            GameObject.FindGameObjectsWithTag("Button").FirstOrDefault(o => o.name == "Make Selection").SetActive(true);
+        }
+    }
+
+    public void OnNumberButtonPress(int value)
+    {
+        if (box.tiles[value - 1].IsHighlighted)
+        {
+            box.tiles[value - 1].IsSelected = !box.tiles[value - 1].IsSelected;
         }
     }
 
     public void MakeSelection()
     {
+        //var sum = box.tiles.Where(tile => tile.IsSelected).Sum(tile => tile.Value);
+
+        // Find the buttons on the canvas
+        var boxButtons = GameObject.FindGameObjectWithTag("Box").GetComponentsInChildren<Button>();
+
         // Close off all selected Tiles
         foreach (var tile in box.tiles.Where(tile => tile.IsSelected))
         {
             tile.Close();
+            boxButtons[tile.Value - 1].gameObject.SetActive(false);
         }
 
         tilesClosingSound.Play();
@@ -83,6 +111,29 @@ public class GameController : MonoBehaviour
         {
             hasPlayerWon = true;
             isGameOver = true;
+            GameOver();
+        }
+        else
+        {
+            GameObject.FindGameObjectsWithTag("Button").FirstOrDefault(o => o.name == "Roll Dice").SetActive(true);
+        }
+    }
+
+    public void GameOver()
+    {
+        var newGameButton = GameObject.FindGameObjectsWithTag("Button").First(o => o.name == "New Game");
+        newGameButton.SetActive(true);
+
+        var mainMenuButton = GameObject.FindGameObjectsWithTag("Button").First(o => o.name == "Main Menu");
+        mainMenuButton.SetActive(true);
+
+        var gameOverText = hasPlayerWon ?
+            GameObject.Find("Player Win") :
+            GameObject.Find("Game Over");
+
+        if (gameOverText != null)
+        {
+            gameOverText.SetActive(true);
         }
     }
 
